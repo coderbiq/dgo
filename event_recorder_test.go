@@ -36,8 +36,11 @@ func (suite *eventRecorderTestSuite) TestRecord() {
 
 }
 
-func (suite *eventRecorderTestSuite) TestInAggregate() {
-	example.PostTodo(dgo.StringID("testId"), "test text")
+func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
+	aggregate := example.PostOrmTodo(dgo.StringID("testId"), "test text")
+	suite.Equal(1, int(aggregate.Version()))
+	suite.Equal(1, len(aggregate.RecordedEvents()))
+	suite.Equal(1, int(aggregate.RecordedEvents()[0].Version()))
 }
 
 func (suite *eventRecorderTestSuite) newEvent() dgo.DomainEvent {

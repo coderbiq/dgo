@@ -16,8 +16,16 @@ type TodoID dgo.Identity
 
 // Todo aggregate root model
 type Todo struct {
-	ID   TodoID
-	Text string
+	events *dgo.EventRecorder
+	ID     TodoID
+	Text   string
+}
+
+// PostTodo post todo
+func PostTodo(id TodoID, text string) {
+	todo := Todo{events: dgo.NewEventRecorder(0)}
+	todo.events.RecordThan(
+		dgo.OccurDomainEvent(id, TodoCreated, NewTodoCreatedPayload(text)))
 }
 
 // TodoCreatedPayload todo created domain event model

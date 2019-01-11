@@ -6,6 +6,7 @@ import "strconv"
 type ValueObject interface {
 	Equal(other ValueObject) bool
 	String() string
+	Empty() bool
 }
 
 // Identity model
@@ -29,6 +30,11 @@ func (id StringID) String() string {
 	return string(id)
 }
 
+// Empty assert empty
+func (id StringID) Empty() bool {
+	return string(id) == ""
+}
+
 // LongID identity of int64
 type LongID int64
 
@@ -43,4 +49,9 @@ func (id LongID) Equal(other ValueObject) bool {
 
 func (id LongID) String() string {
 	return strconv.FormatInt(int64(id), 10)
+}
+
+// Empty assert empty
+func (id LongID) Empty() bool {
+	return int64(id) == 0
 }

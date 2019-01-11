@@ -1,18 +1,15 @@
-package dgo
+package model
 
-import "strconv"
+import (
+	"strconv"
 
-// ValueObject model
-type ValueObject interface {
-	Equal(other ValueObject) bool
-	String() string
-	Empty() bool
-}
+	"github.com/bwmarrin/snowflake"
+)
 
-// Identity model
-type Identity interface {
-	ValueObject
-}
+// IdentityGenerator generate identity
+var IdentityGenerator identityGenerator = defIdentityGenerator
+
+type identityGenerator func() Identity
 
 // StringID identity of string
 type StringID string
@@ -54,4 +51,12 @@ func (id LongID) String() string {
 // Empty assert empty
 func (id LongID) Empty() bool {
 	return int64(id) == 0
+}
+
+func defIdentityGenerator() Identity {
+	node, err := snowflake.NewNode(1)
+	if err != nil {
+		panic(err)
+	}
+	return LongID(node.Generate())
 }

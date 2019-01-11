@@ -1,20 +1,20 @@
-package dgo_test
+package model_test
 
 import (
 	"testing"
 
-	"github.com/coderbiq/dgo"
-	"github.com/coderbiq/dgo/example"
+	"github.com/coderbiq/dgo/internal/example"
+	"github.com/coderbiq/dgo/model"
 	"github.com/stretchr/testify/suite"
 )
 
 type eventRecorderTestSuite struct {
 	suite.Suite
-	recorder *dgo.EventRecorder
+	recorder *model.EventRecorder
 }
 
 func (suite *eventRecorderTestSuite) SetupTest() {
-	suite.recorder = dgo.NewEventRecorder(0)
+	suite.recorder = model.NewEventRecorder(0)
 }
 
 func (suite *eventRecorderTestSuite) TestDefaultStatus() {
@@ -37,7 +37,7 @@ func (suite *eventRecorderTestSuite) TestRecord() {
 }
 
 func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
-	id := dgo.StringID("testId")
+	id := model.StringID("testId")
 	text := "test text"
 	aggregate := example.PostOrmTodo(id, text)
 	suite.Equal(id, aggregate.ID())
@@ -48,7 +48,7 @@ func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
 }
 
 func (suite *eventRecorderTestSuite) TestInSourcedAggregate() {
-	id := dgo.StringID("testId")
+	id := model.StringID("testId")
 	text := "test text"
 	aggregate := example.PostSourcedTodo(id, text)
 	suite.Equal(id, aggregate.ID())
@@ -58,9 +58,9 @@ func (suite *eventRecorderTestSuite) TestInSourcedAggregate() {
 	suite.Equal(1, int(aggregate.RecordedEvents()[0].Version()))
 }
 
-func (suite *eventRecorderTestSuite) newEvent() dgo.DomainEvent {
-	return dgo.OccurDomainEvent(
-		dgo.StringID("testAggregateId"),
+func (suite *eventRecorderTestSuite) newEvent() model.DomainEvent {
+	return model.OccurDomainEvent(
+		model.StringID("testAggregateId"),
 		example.TodoCreated,
 		example.NewTodoCreatedPayload("test text"))
 }

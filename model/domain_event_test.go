@@ -1,23 +1,22 @@
-package dgo_test
+package model_test
 
 import (
 	"testing"
 
+	"github.com/coderbiq/dgo/internal/example"
+	"github.com/coderbiq/dgo/model"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/coderbiq/dgo"
-	"github.com/coderbiq/dgo/example"
 )
 
 type domainEventTestSuite struct {
 	suite.Suite
 
-	aid     dgo.Identity
+	aid     model.Identity
 	payload example.TodoCreatedPayload
 }
 
 func (suite *domainEventTestSuite) SetupTest() {
-	suite.aid = dgo.StringID("testId")
+	suite.aid = model.StringID("testId")
 	suite.payload = example.NewTodoCreatedPayload("test text")
 }
 
@@ -47,8 +46,8 @@ func (suite *domainEventTestSuite) TestWithVersion() {
 	suite.Equal(e.Payload(), e2.Payload())
 }
 
-func (suite *domainEventTestSuite) newEvent() dgo.DomainEvent {
-	return dgo.OccurDomainEvent(
+func (suite *domainEventTestSuite) newEvent() model.DomainEvent {
+	return model.OccurDomainEvent(
 		suite.aid,
 		example.TodoCreated,
 		suite.payload)

@@ -3,7 +3,7 @@ package example
 import (
 	"encoding/json"
 
-	"github.com/coderbiq/dgo"
+	"github.com/coderbiq/dgo/model"
 )
 
 const (
@@ -12,7 +12,7 @@ const (
 )
 
 // TodoID todo aggregate identity model
-type TodoID dgo.Identity
+type TodoID model.Identity
 
 // TodoCreatedPayload todo created domain event model
 type TodoCreatedPayload struct {

@@ -1,8 +1,11 @@
-package dgo
+package model
 
-import (
-	"time"
-)
+import "time"
+
+// Payload message payload
+type Payload interface {
+	JSON() ([]byte, error)
+}
 
 // DomainEvent domain event model
 type DomainEvent interface {
@@ -16,7 +19,8 @@ type DomainEvent interface {
 }
 
 // OccurDomainEvent create domain event
-func OccurDomainEvent(aggregateID Identity, name string, payload Payload) DomainEvent {
+func OccurDomainEvent(aggregateID Identity,
+	name string, payload Payload) DomainEvent {
 	return baseDomainEvent{
 		baseMessage: newBaseMessage(name, payload),
 		aggregateID: aggregateID,

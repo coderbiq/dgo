@@ -1,12 +1,13 @@
 package example
 
 import (
-	"github.com/coderbiq/dgo"
+	"github.com/coderbiq/dgo/eventsourcing"
+	"github.com/coderbiq/dgo/model"
 )
 
 // SourcedTodo 实现了 EventSourcing 的 Todo 聚合根
 type SourcedTodo struct {
-	events *dgo.EventRecorder
+	events *eventsourcing.EventRecorder
 	id     TodoID
 	text   string
 }
@@ -14,14 +15,14 @@ type SourcedTodo struct {
 // PostSourcedTodo 新建一条待办事项
 func PostSourcedTodo(id TodoID, test string) *SourcedTodo {
 	todo := &SourcedTodo{}
-	todo.events = dgo.EventRecorderFromSourced(todo, 0)
+	todo.events = eventsourcing.EventRecorderFromSourced(todo, 0)
 	todo.events.RecordThan(
-		dgo.OccurDomainEvent(id, TodoCreated, NewTodoCreatedPayload(test)))
+		model.OccurDomainEvent(id, TodoCreated, NewTodoCreatedPayload(test)))
 	return todo
 }
 
 // ID 返回当前聚合的唯一标识
-func (t SourcedTodo) ID() dgo.Identity {
+func (t SourcedTodo) ID() model.Identity {
 	return t.id
 }
 
@@ -36,12 +37,12 @@ func (t SourcedTodo) Version() uint {
 }
 
 // RecordedEvents 返回当前聚合暂存的所有领域事件
-func (t SourcedTodo) RecordedEvents() []dgo.DomainEvent {
+func (t SourcedTodo) RecordedEvents() []model.DomainEvent {
 	return t.events.RecordedEvents()
 }
 
 // Apply 应用领域事件构建当前聚合状态
-func (t *SourcedTodo) Apply(event dgo.DomainEvent) {
+func (t *SourcedTodo) Apply(event model.DomainEvent) {
 	switch event.Name() {
 	case TodoCreated:
 		payload := event.Payload().(TodoCreatedPayload)

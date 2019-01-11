@@ -37,7 +37,22 @@ func (suite *eventRecorderTestSuite) TestRecord() {
 }
 
 func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
-	aggregate := example.PostOrmTodo(dgo.StringID("testId"), "test text")
+	id := dgo.StringID("testId")
+	text := "test text"
+	aggregate := example.PostOrmTodo(id, text)
+	suite.Equal(id, aggregate.ID())
+	suite.Equal(text, aggregate.Text())
+	suite.Equal(1, int(aggregate.Version()))
+	suite.Equal(1, len(aggregate.RecordedEvents()))
+	suite.Equal(1, int(aggregate.RecordedEvents()[0].Version()))
+}
+
+func (suite *eventRecorderTestSuite) TestInSourcedAggregate() {
+	id := dgo.StringID("testId")
+	text := "test text"
+	aggregate := example.PostSourcedTodo(id, text)
+	suite.Equal(id, aggregate.ID())
+	suite.Equal(text, aggregate.Text())
 	suite.Equal(1, int(aggregate.Version()))
 	suite.Equal(1, len(aggregate.RecordedEvents()))
 	suite.Equal(1, int(aggregate.RecordedEvents()[0].Version()))

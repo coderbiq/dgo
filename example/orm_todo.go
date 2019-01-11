@@ -19,8 +19,8 @@ func PostOrmTodo(id TodoID, text string) *OrmTodo {
 	return todo
 }
 
-// Id return aggregate id
-func (t OrmTodo) Id() dgo.Identity {
+// ID return aggregate id
+func (t OrmTodo) ID() dgo.Identity {
 	return t.id
 }
 

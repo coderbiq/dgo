@@ -1,2 +1,2 @@
-//Package model 提供定义领域模型需要的组件
+//Package model 提供用于定义领域模型的一些工具组件
 package model

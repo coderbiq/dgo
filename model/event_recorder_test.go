@@ -33,24 +33,12 @@ func (suite *eventRecorderTestSuite) TestRecord() {
 	suite.Equal(2, len(suite.recorder.RecordedEvents()))
 	suite.Equal(1, int(suite.recorder.RecordedEvents()[0].Version()))
 	suite.Equal(2, int(suite.recorder.RecordedEvents()[1].Version()))
-
 }
 
 func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
 	id := model.StringID("testId")
 	text := "test text"
 	aggregate := example.PostOrmTodo(id, text)
-	suite.Equal(id, aggregate.ID())
-	suite.Equal(text, aggregate.Text())
-	suite.Equal(1, int(aggregate.Version()))
-	suite.Equal(1, len(aggregate.RecordedEvents()))
-	suite.Equal(1, int(aggregate.RecordedEvents()[0].Version()))
-}
-
-func (suite *eventRecorderTestSuite) TestInSourcedAggregate() {
-	id := model.StringID("testId")
-	text := "test text"
-	aggregate := example.PostSourcedTodo(id, text)
 	suite.Equal(id, aggregate.ID())
 	suite.Equal(text, aggregate.Text())
 	suite.Equal(1, int(aggregate.Version()))

@@ -6,15 +6,16 @@ import (
 	"github.com/bwmarrin/snowflake"
 )
 
-// IdentityGenerator generate identity
+// IdentityGenerator 存储当前使用的标识生成器
+// 主要用于为消息生成唯一标识，也可用于为聚合或实体生成标识。
 var IdentityGenerator identityGenerator = defIdentityGenerator
 
 type identityGenerator func() Identity
 
-// StringID identity of string
+// StringID 字符串类型的标识模型
 type StringID string
 
-// Equal assert equals
+// Equal 判断提供的另一个标识是否与当前标识为同一个标识
 func (id StringID) Equal(other ValueObject) bool {
 	otherStringID, ok := other.(StringID)
 	if !ok {
@@ -27,15 +28,15 @@ func (id StringID) String() string {
 	return string(id)
 }
 
-// Empty assert empty
+// Empty 返回当前标识是否为一个空值
 func (id StringID) Empty() bool {
 	return string(id) == ""
 }
 
-// LongID identity of int64
+// LongID 长整数类型的标识模型
 type LongID int64
 
-// Equal assert equals
+// Equal 判断提供的另一个标识是否与当前标识为同一个标识
 func (id LongID) Equal(other ValueObject) bool {
 	otherLongID, ok := other.(LongID)
 	if !ok {
@@ -48,7 +49,7 @@ func (id LongID) String() string {
 	return strconv.FormatInt(int64(id), 10)
 }
 
-// Empty assert empty
+// Empty 返回当前标识是否为一个空值
 func (id LongID) Empty() bool {
 	return int64(id) == 0
 }

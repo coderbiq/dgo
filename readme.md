@@ -1,1 +1,1 @@
-DDD CQRS EventSourcing for golang.
+为在 Golang 中实现 DDD 战术模型、CQRS 和 EventSourcing 提供一些实用组件。

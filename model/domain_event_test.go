@@ -37,7 +37,7 @@ func (suite *domainEventTestSuite) TestCreateEvent() {
 
 func (suite *domainEventTestSuite) TestWithVersion() {
 	e := suite.newEvent()
-	e2 := e.WithVersin(2)
+	e2 := e.WithVersion(2)
 	suite.Equal(2, int(e2.Version()))
 	suite.Equal(e.ID(), e2.ID())
 	suite.Equal(e.AggregateID(), e2.AggregateID())

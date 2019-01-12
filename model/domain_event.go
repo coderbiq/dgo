@@ -18,7 +18,19 @@ type DomainEvent interface {
 	Payload() Payload
 	Version() uint
 	CreatedAt() time.Time
-	WithVersin(version uint) DomainEvent
+	// WithVersion 使用提供的版本号产生一个新事件
+	WithVersion(version uint) DomainEvent
+}
+
+// EventPublisher 定义事件发布器
+//
+// 事件发布器可以将领域事件发布到消息中间件或事件存储，具体如何发布由发布器内部进行实现。
+type EventPublisher interface {
+	// Publish 发布领域事件
+	//
+	// 发布器内部应该自行维护失败状态。例如：提交消息中间件失败后可以将需要发布的事件暂存，待检查
+	// 到消息中间件恢复后再继续发布。
+	Publish(events ...DomainEvent)
 }
 
 // OccurDomainEvent 创建一个已经发生的领域事件
@@ -61,7 +73,7 @@ func (e baseDomainEvent) CreatedAt() time.Time {
 	return e.created
 }
 
-func (e baseDomainEvent) WithVersin(version uint) DomainEvent {
+func (e baseDomainEvent) WithVersion(version uint) DomainEvent {
 	return baseDomainEvent{
 		baseMessage: e.baseMessage,
 		aggregateID: e.aggregateID,

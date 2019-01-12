@@ -3,20 +3,24 @@ package eventsourcing_test
 import (
 	"testing"
 
-	"github.com/coderbiq/dgo/internal/example"
+	"github.com/coderbiq/dgo/internal/example/points"
+	"github.com/coderbiq/dgo/internal/mocks"
 	"github.com/coderbiq/dgo/model"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSourcedEventRecorder(t *testing.T) {
-	id := model.StringID("testId")
-	text := "test text"
-	aggregate := example.PostSourcedTodo(id, text)
+	ownerID := model.IdentityGenerator()
+	account := points.RegisterSourcedAccount(ownerID)
 
 	assert := assert.New(t)
-	assert.Equal(id, aggregate.ID())
-	assert.Equal(text, aggregate.Text())
-	assert.Equal(1, int(aggregate.Version()))
-	assert.Equal(1, len(aggregate.RecordedEvents()))
-	assert.Equal(1, int(aggregate.RecordedEvents()[0].Version()))
+	assert.True(ownerID.Equal(account.OwnerID()))
+	assert.False(account.ID().Empty())
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	publisher := mocks.NewMockEventPublisher(ctrl)
+	publisher.EXPECT().Publish(gomock.Any()).Times(1)
+	account.(model.EventProducer).CommitEvents(publisher)
 }

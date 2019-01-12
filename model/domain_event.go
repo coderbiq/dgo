@@ -1,21 +1,15 @@
 package model
 
-import "time"
-
-// Payload 定义消息有效载荷外观
-//
-// 消息有效载荷可以应用于领域事件、CQRS指令中用于描述数据信息，为了将这些数据可以便于存储和在消息
-// 中间件中传输需要为数据提交编码行为，这里统一定义为编码成 JSON 字符串。
-type Payload interface {
-	JSON() ([]byte, error)
-}
+import (
+	"time"
+)
 
 // DomainEvent 定义领域事件外观
 type DomainEvent interface {
 	ID() Identity
 	Name() string
 	AggregateID() Identity
-	Payload() Payload
+	Payload() interface{}
 	Version() uint
 	CreatedAt() time.Time
 	// WithVersion 使用提供的版本号产生一个新事件
@@ -33,49 +27,37 @@ type EventPublisher interface {
 	Publish(events ...DomainEvent)
 }
 
-// OccurDomainEvent 创建一个已经发生的领域事件
-func OccurDomainEvent(aggregateID Identity,
-	name string, payload Payload) DomainEvent {
-	return baseDomainEvent{
-		baseMessage: newBaseMessage(name, payload),
-		aggregateID: aggregateID,
+// EventProducer 定义领域事件生产者
+type EventProducer interface {
+	CommitEvents(publishers ...EventPublisher)
+}
+
+// OccurEvent 创建一个新发生的事件
+func OccurEvent(aid Identity, name string, p interface{}) DomainEvent {
+	return domainEvent{
+		Message:     NewMessage(name, p),
+		aggregateID: aid,
 	}
 }
 
-type baseDomainEvent struct {
-	baseMessage
+type domainEvent struct {
+	Message
 
 	aggregateID Identity
 	version     uint
 }
 
-func (e baseDomainEvent) ID() Identity {
-	return e.id
-}
-
-func (e baseDomainEvent) Name() string {
-	return e.name
-}
-
-func (e baseDomainEvent) AggregateID() Identity {
+func (e domainEvent) AggregateID() Identity {
 	return e.aggregateID
 }
 
-func (e baseDomainEvent) Payload() Payload {
-	return e.payload
-}
-
-func (e baseDomainEvent) Version() uint {
+func (e domainEvent) Version() uint {
 	return e.version
 }
 
-func (e baseDomainEvent) CreatedAt() time.Time {
-	return e.created
-}
-
-func (e baseDomainEvent) WithVersion(version uint) DomainEvent {
-	return baseDomainEvent{
-		baseMessage: e.baseMessage,
+func (e domainEvent) WithVersion(version uint) DomainEvent {
+	return domainEvent{
+		Message:     e.Message,
 		aggregateID: e.aggregateID,
 		version:     version,
 	}

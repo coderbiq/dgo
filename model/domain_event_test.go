@@ -3,7 +3,7 @@ package model_test
 import (
 	"testing"
 
-	"github.com/coderbiq/dgo/internal/example"
+	"github.com/coderbiq/dgo/internal/example/points"
 	"github.com/coderbiq/dgo/model"
 	"github.com/stretchr/testify/suite"
 )
@@ -12,31 +12,30 @@ type domainEventTestSuite struct {
 	suite.Suite
 
 	aid     model.Identity
-	payload example.TodoCreatedPayload
+	ownerId model.Identity
 }
 
 func (suite *domainEventTestSuite) SetupTest() {
-	suite.aid = model.StringID("testId")
-	suite.payload = example.NewTodoCreatedPayload("test text")
+	suite.aid = model.IdentityGenerator()
+	suite.ownerId = model.IdentityGenerator()
 }
 
 func (suite *domainEventTestSuite) TestCreateEvent() {
-	e := suite.newEvent()
+	e := points.NewAccountCreatedEvent(suite.aid, suite.ownerId)
 
 	assert := suite.Assert()
 	assert.Equal(suite.aid, e.AggregateID())
-	assert.Equal(example.TodoCreated, e.Name())
-	assert.Equal(suite.payload, e.Payload())
+	assert.Equal(points.AccountCreated, e.Name())
 	assert.NotEmpty(e.CreatedAt())
 	assert.Equal(0, int(e.Version()))
 	assert.False(e.ID().Empty())
 
-	created := e.Payload().(example.TodoCreatedPayload)
-	assert.Equal("test text", created.Text())
+	suite.Equal(suite.ownerId, e.Payload().(*points.AccountCreatedPayload).OwnerID())
 }
 
 func (suite *domainEventTestSuite) TestWithVersion() {
-	e := suite.newEvent()
+	e := points.NewAccountCreatedEvent(suite.aid, suite.ownerId)
+
 	e2 := e.WithVersion(2)
 	suite.Equal(2, int(e2.Version()))
 	suite.Equal(e.ID(), e2.ID())
@@ -44,13 +43,6 @@ func (suite *domainEventTestSuite) TestWithVersion() {
 	suite.Equal(e.Name(), e2.Name())
 	suite.Equal(e.CreatedAt(), e2.CreatedAt())
 	suite.Equal(e.Payload(), e2.Payload())
-}
-
-func (suite *domainEventTestSuite) newEvent() model.DomainEvent {
-	return model.OccurDomainEvent(
-		suite.aid,
-		example.TodoCreated,
-		suite.payload)
 }
 
 func TestDomainEventSuite(t *testing.T) {

@@ -3,7 +3,7 @@ package model_test
 import (
 	"testing"
 
-	"github.com/coderbiq/dgo/internal/example"
+	"github.com/coderbiq/dgo/internal/example/points"
 	"github.com/coderbiq/dgo/internal/mocks"
 	"github.com/coderbiq/dgo/model"
 	"github.com/golang/mock/gomock"
@@ -54,21 +54,23 @@ func (suite *eventRecorderTestSuite) TestCommitToPublisher() {
 }
 
 func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
-	id := model.StringID("testId")
-	text := "test text"
-	aggregate := example.PostOrmTodo(id, text)
-	suite.Equal(id, aggregate.ID())
-	suite.Equal(text, aggregate.Text())
-	suite.Equal(1, int(aggregate.Version()))
-	suite.Equal(1, len(aggregate.RecordedEvents()))
-	suite.Equal(1, int(aggregate.RecordedEvents()[0].Version()))
+	ownerID := model.IdentityGenerator()
+	account := points.RegisterOrmAccount(ownerID)
+	suite.True(ownerID.Equal(account.OwnerID()))
+	suite.False(account.ID().Empty())
+
+	ctrl := gomock.NewController(suite.T())
+	defer ctrl.Finish()
+	publisher := mocks.NewMockEventPublisher(ctrl)
+	publisher.EXPECT().Publish(gomock.Any()).Times(1)
+	account.(model.EventProducer).CommitEvents(publisher)
 }
 
 func (suite *eventRecorderTestSuite) newEvent() model.DomainEvent {
-	return model.OccurDomainEvent(
+	return model.OccurEvent(
 		model.StringID("testAggregateId"),
-		example.TodoCreated,
-		example.NewTodoCreatedPayload("test text"))
+		points.AccountCreated,
+		points.NewAccountCreatedEvent(model.IdentityGenerator(), model.IdentityGenerator()))
 }
 
 func TestEventRecorderSuite(t *testing.T) {

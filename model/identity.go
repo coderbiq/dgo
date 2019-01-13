@@ -12,6 +12,17 @@ var IdentityGenerator identityGenerator = defIdentityGenerator
 
 type identityGenerator func() Identity
 
+// IDFromInterface 根据一个 Interface 生成一个 Identity 实例
+func IDFromInterface(v interface{}) Identity {
+	switch id := v.(type) {
+	case string:
+		return StringID(id)
+	case int64:
+		return LongID(id)
+	}
+	return nil
+}
+
 // StringID 字符串类型的标识模型
 type StringID string
 

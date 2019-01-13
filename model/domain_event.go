@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 )
@@ -61,10 +62,7 @@ func OccurEvent(aggregateID Identity, event DomainEvent) DomainEvent {
 
 // AggregateChanged 提供对 DomainEvent 基本外观的实现
 type AggregateChanged struct {
-	EventID           Identity
-	ChagneTime        time.Time
-	AggregateIdentity Identity
-	AggregateVersion  uint
+	Payload map[string]interface{}
 }
 
 type aggregateChanged interface {
@@ -75,40 +73,61 @@ type aggregateChanged interface {
 
 // ID 返回聚合变更事件标识
 func (ac AggregateChanged) ID() Identity {
-	return ac.EventID
+	return IDFromInterface(ac.Payload["id"])
 }
 
 // AggregateID 返回发生变更的聚合标识
 func (ac AggregateChanged) AggregateID() Identity {
-	return ac.AggregateIdentity
+	return IDFromInterface(ac.Payload["aggregateId"])
 }
 
 // Version 返回聚合变更时的版本号
 func (ac AggregateChanged) Version() uint {
-	return ac.AggregateVersion
+	if v, has := ac.Payload["version"]; has {
+		return v.(uint)
+	}
+	return 0
 }
 
 // CreatedAt 返回聚合变更的时间
 func (ac AggregateChanged) CreatedAt() time.Time {
-	return ac.ChagneTime
+	return ac.Payload["createdAt"].(time.Time)
 }
 
 // Init 初始化变更事件
 func (ac *AggregateChanged) Init() {
-	if ac.EventID == nil || ac.EventID.Empty() {
-		ac.EventID = IdentityGenerator()
+	if ac.Payload == nil {
+		ac.Payload = map[string]interface{}{}
 	}
-	if ac.ChagneTime.IsZero() {
-		ac.ChagneTime = time.Now()
+	if _, has := ac.Payload["id"]; !has {
+		ac.Payload["id"] = IdentityGenerator().String()
+	}
+	if _, has := ac.Payload["createdAt"]; !has {
+		ac.Payload["createdAt"] = time.Now()
 	}
 }
 
 // WithAggregateID 指定发生变更的聚合标识
 func (ac *AggregateChanged) WithAggregateID(id Identity) {
-	ac.AggregateIdentity = id
+	ac.Payload["aggregateId"] = id.String()
 }
 
 // WithVersion 指定聚合变更版本
 func (ac *AggregateChanged) WithVersion(version uint) {
-	ac.AggregateVersion = version
+	ac.Payload["version"] = version
+}
+
+// MarshalJSON json 序列化
+func (ac AggregateChanged) MarshalJSON() ([]byte, error) {
+	return json.Marshal(ac.Payload)
+}
+
+// UnmarshalJSON json 反序列化
+func (ac *AggregateChanged) UnmarshalJSON(data []byte) error {
+	payload := map[string]interface{}{}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return err
+	}
+	ac.Payload = payload
+	return nil
 }

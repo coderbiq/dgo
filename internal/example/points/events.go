@@ -1,6 +1,10 @@
 package points
 
-import "github.com/coderbiq/dgo/model"
+import (
+	"encoding/json"
+
+	"github.com/coderbiq/dgo/model"
+)
 
 const (
 	// AccountCreatedEvent 积分账户创建事件
@@ -31,14 +35,32 @@ type (
 
 type accountCreated struct {
 	model.AggregateChanged
-	ownerID CustomerID
+	// ownerID CustomerID
 }
 
 // OccurAccountCreated 返回一个新的积分账户创建成功事件
 func OccurAccountCreated(aid AccountID, ownerID CustomerID) AccountCreated {
-	return model.OccurEvent(
-		aid,
-		&accountCreated{ownerID: ownerID}).(AccountCreated)
+	e := accountCreated{
+		AggregateChanged: model.AggregateChanged{
+			Payload: map[string]interface{}{
+				"aggregateId": aid.String(),
+				"ownerId":     ownerID.String(),
+			},
+		},
+	}
+	e.Init()
+	return e
+	// return model.OccurEvent(
+	// 	aid,
+	// 	&accountCreated{ownerID: ownerID}).(AccountCreated)
+}
+
+func AccountCreatedFromJSON(data []byte) (AccountCreated, error) {
+	e := &accountCreated{}
+	if err := json.Unmarshal(data, e); err != nil {
+		return nil, err
+	}
+	return e, nil
 }
 
 // Name 返回积分账户创建成功事件名称
@@ -48,7 +70,8 @@ func (p accountCreated) Name() string {
 
 // OwnerID 返回新建积分账户所属的会员唯一标识
 func (p accountCreated) OwnerID() CustomerID {
-	return p.ownerID
+	return model.IDFromInterface(p.Payload["ownerId"])
+	// return p.ownerID
 }
 
 type accountDeposited struct {

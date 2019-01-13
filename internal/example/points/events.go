@@ -3,62 +3,90 @@ package points
 import "github.com/coderbiq/dgo/model"
 
 const (
-	// AccountCreated 积分账户创建事件
-	AccountCreated = "accountCreated"
-	// AccountDeposited 积分账户充值事件
-	AccountDeposited = "accountDeposited"
-	// AccountConsumed 积分账户消费事件
-	AccountConsumed = "accountConsumed"
+	// AccountCreatedEvent 积分账户创建事件
+	AccountCreatedEvent = "accountCreated"
+	// AccountDepositedEvent 积分账户充值事件
+	AccountDepositedEvent = "accountDeposited"
+	// AccountConsumedEvent 积分账户消费事件
+	AccountConsumedEvent = "accountConsumed"
 )
 
 type (
-	// AccountCreatedPayload 积分账户创建事件信息
-	AccountCreatedPayload struct {
-		ownerID CustomerID
+	// AccountCreated 积分账户创建事件信息
+	AccountCreated interface {
+		model.DomainEvent
+		OwnerID() CustomerID
 	}
-	// AccountDepositedPayload 积分账户充值事件信息
-	AccountDepositedPayload struct {
-		points Points
+	// AccountDeposited 积分账户充值事件信息
+	AccountDeposited interface {
+		model.DomainEvent
+		Points() Points
 	}
-	// AccountConsumedPayload 积分账户消费事件信息
-	AccountConsumedPayload struct {
-		points Points
+	// AccountConsumed 积分账户消费事件信息
+	AccountConsumed interface {
+		model.DomainEvent
+		Points() Points
 	}
 )
 
-// NewAccountCreatedEvent 返回一个新的积分账户创建成功事件
-func NewAccountCreatedEvent(aid AccountID, ownerID CustomerID) model.DomainEvent {
+type accountCreated struct {
+	model.AggregateChanged
+	ownerID CustomerID
+}
+
+// OccurAccountCreated 返回一个新的积分账户创建成功事件
+func OccurAccountCreated(aid AccountID, ownerID CustomerID) AccountCreated {
 	return model.OccurEvent(
 		aid,
-		AccountCreated,
-		&AccountCreatedPayload{ownerID: ownerID})
+		&accountCreated{ownerID: ownerID}).(AccountCreated)
+}
+
+// Name 返回积分账户创建成功事件名称
+func (p accountCreated) Name() string {
+	return AccountCreatedEvent
 }
 
 // OwnerID 返回新建积分账户所属的会员唯一标识
-func (p AccountCreatedPayload) OwnerID() CustomerID {
+func (p accountCreated) OwnerID() CustomerID {
 	return p.ownerID
 }
 
-func newDepositedEvent(aid AccountID, points Points) model.DomainEvent {
+type accountDeposited struct {
+	model.AggregateChanged
+	points Points
+}
+
+func occurDeposited(aid AccountID, points Points) AccountDeposited {
 	return model.OccurEvent(
 		aid,
-		AccountDeposited,
-		&AccountDepositedPayload{points: points})
+		&accountDeposited{points: points}).(AccountDeposited)
+}
+
+// Name 返回积分账户充值事件名称
+func (p accountDeposited) Name() string {
+	return AccountDepositedEvent
 }
 
 // Points 返回积分账户充值金额
-func (p AccountDepositedPayload) Points() Points {
+func (p accountDeposited) Points() Points {
 	return p.points
 }
 
-func newConsumedEvent(aid AccountID, points Points) model.DomainEvent {
-	return model.OccurEvent(
-		aid,
-		AccountConsumed,
-		&AccountConsumedPayload{points: points})
+type accountConsumed struct {
+	model.AggregateChanged
+	points Points
+}
+
+func occurConsumed(aid AccountID, points Points) AccountConsumed {
+	return model.OccurEvent(aid, &accountConsumed{points: points}).(AccountConsumed)
+}
+
+// Name 返回积分账户消费事件名称
+func (p accountConsumed) Name() string {
+	return AccountConsumedEvent
 }
 
 // Points 返回积分账户消息金额
-func (p AccountConsumedPayload) Points() Points {
+func (p accountConsumed) Points() Points {
 	return p.points
 }

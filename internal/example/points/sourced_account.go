@@ -16,21 +16,21 @@ type sourcedAccount struct {
 func RegisterSourcedAccount(ownerID CustomerID) Account {
 	a := new(sourcedAccount)
 	a.events = eventsourcing.EventRecorderFromSourced(a, 0)
-	a.events.RecordThan(NewAccountCreatedEvent(
+	a.events.RecordThan(OccurAccountCreated(
 		model.IdentityGenerator(),
 		ownerID))
 	return a
 }
 
 func (a *sourcedAccount) Deposit(points Points) {
-	a.events.RecordThan(newDepositedEvent(a.id, points))
+	a.events.RecordThan(occurDeposited(a.id, points))
 }
 
 func (a *sourcedAccount) Consume(points Points) error {
 	if !a.points.GreaterThan(points) {
 		return fmt.Errorf("当前账户积分为 %d 不足消费额 %d", a.points, points)
 	}
-	a.events.RecordThan(newConsumedEvent(a.id, points))
+	a.events.RecordThan(occurConsumed(a.id, points))
 	return nil
 }
 
@@ -44,15 +44,15 @@ func (a *sourcedAccount) CommitEvents(publishers ...model.EventPublisher) {
 
 func (a *sourcedAccount) Apply(event model.DomainEvent) {
 	switch event.Name() {
-	case AccountCreated:
+	case AccountCreatedEvent:
 		a.id = event.AggregateID()
-		a.ownerID = event.Payload().(*AccountCreatedPayload).OwnerID()
+		a.ownerID = event.(AccountCreated).OwnerID()
 		break
-	case AccountDeposited:
-		a.points = a.points.Inc(event.Payload().(*AccountDepositedPayload).Points())
+	case AccountDepositedEvent:
+		a.points = a.points.Inc(event.(AccountDeposited).Points())
 		break
-	case AccountConsumed:
-		a.points = a.points.Dec(event.Payload().(*AccountConsumedPayload).Points())
+	case AccountConsumedEvent:
+		a.points = a.points.Dec(event.(AccountConsumed).Points())
 		break
 	}
 }

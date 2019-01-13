@@ -9,11 +9,8 @@ type DomainEvent interface {
 	ID() Identity
 	Name() string
 	AggregateID() Identity
-	Payload() interface{}
 	Version() uint
 	CreatedAt() time.Time
-	// WithVersion 使用提供的版本号产生一个新事件
-	WithVersion(version uint) DomainEvent
 }
 
 // EventPublisher 定义事件发布器
@@ -32,33 +29,65 @@ type EventProducer interface {
 	CommitEvents(publishers ...EventPublisher)
 }
 
-// OccurEvent 创建一个新发生的事件
-func OccurEvent(aid Identity, name string, p interface{}) DomainEvent {
-	return domainEvent{
-		Message:     NewMessage(name, p),
-		aggregateID: aid,
+// OccurEvent 组装一个已发生的领域事件
+func OccurEvent(aggregateID Identity, event DomainEvent) DomainEvent {
+	if changed, ok := event.(aggregateChanged); ok {
+		changed.WithAggregateID(aggregateID)
+		changed.Init()
+	}
+	return event
+}
+
+// AggregateChanged 提供对 DomainEvent 基本外观的实现
+type AggregateChanged struct {
+	EventID           Identity
+	ChagneTime        time.Time
+	AggregateIdentity Identity
+	AggregateVersion  uint
+}
+
+type aggregateChanged interface {
+	Init()
+	WithVersion(version uint)
+	WithAggregateID(id Identity)
+}
+
+// ID 返回聚合变更事件标识
+func (ac AggregateChanged) ID() Identity {
+	return ac.EventID
+}
+
+// AggregateID 返回发生变更的聚合标识
+func (ac AggregateChanged) AggregateID() Identity {
+	return ac.AggregateIdentity
+}
+
+// Version 返回聚合变更时的版本号
+func (ac AggregateChanged) Version() uint {
+	return ac.AggregateVersion
+}
+
+// CreatedAt 返回聚合变更的时间
+func (ac AggregateChanged) CreatedAt() time.Time {
+	return ac.ChagneTime
+}
+
+// Init 初始化变更事件
+func (ac *AggregateChanged) Init() {
+	if ac.EventID == nil || ac.EventID.Empty() {
+		ac.EventID = IdentityGenerator()
+	}
+	if ac.ChagneTime.IsZero() {
+		ac.ChagneTime = time.Now()
 	}
 }
 
-type domainEvent struct {
-	Message
-
-	aggregateID Identity
-	version     uint
+// WithAggregateID 指定发生变更的聚合标识
+func (ac *AggregateChanged) WithAggregateID(id Identity) {
+	ac.AggregateIdentity = id
 }
 
-func (e domainEvent) AggregateID() Identity {
-	return e.aggregateID
-}
-
-func (e domainEvent) Version() uint {
-	return e.version
-}
-
-func (e domainEvent) WithVersion(version uint) DomainEvent {
-	return domainEvent{
-		Message:     e.Message,
-		aggregateID: e.aggregateID,
-		version:     version,
-	}
+// WithVersion 指定聚合变更版本
+func (ac *AggregateChanged) WithVersion(version uint) {
+	ac.AggregateVersion = version
 }

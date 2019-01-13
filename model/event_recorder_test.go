@@ -67,10 +67,9 @@ func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
 }
 
 func (suite *eventRecorderTestSuite) newEvent() model.DomainEvent {
-	return model.OccurEvent(
-		model.StringID("testAggregateId"),
-		points.AccountCreated,
-		points.NewAccountCreatedEvent(model.IdentityGenerator(), model.IdentityGenerator()))
+	return points.OccurAccountCreated(
+		model.IdentityGenerator(),
+		model.IdentityGenerator())
 }
 
 func TestEventRecorderSuite(t *testing.T) {

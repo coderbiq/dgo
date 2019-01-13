@@ -21,8 +21,12 @@ func NewEventRecorder(version uint) *EventRecorder {
 
 // RecordThan 记录一个已发生的领域事件
 func (r *EventRecorder) RecordThan(event DomainEvent) {
-	r.version++
-	r.recordedEvents = append(r.recordedEvents, event.WithVersion(r.version))
+	if aggregateChanged, ok := event.(aggregateChanged); ok {
+		r.version++
+		aggregateChanged.Init()
+		aggregateChanged.WithVersion(r.version)
+	}
+	r.recordedEvents = append(r.recordedEvents, event)
 }
 
 // CommitToPublisher 将记录器暂存的事件提交到事件发布器并清空暂存列表，持有事件记录器的聚合可

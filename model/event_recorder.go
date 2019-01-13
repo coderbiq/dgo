@@ -26,6 +26,9 @@ func (r *EventRecorder) RecordThan(event DomainEvent) {
 		aggregateChanged.Init()
 		aggregateChanged.WithVersion(r.version)
 	}
+	if err := ValidDomainEvent(event); err != nil {
+		panic(err)
+	}
 	r.recordedEvents = append(r.recordedEvents, event)
 }
 

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"time"
 )
 
@@ -27,6 +28,26 @@ type EventPublisher interface {
 // EventProducer 定义领域事件生产者
 type EventProducer interface {
 	CommitEvents(publishers ...EventPublisher)
+}
+
+// ValidDomainEvent 验证一个领域事件是否完整
+func ValidDomainEvent(event DomainEvent) error {
+	if event.ID() == nil || event.ID().Empty() {
+		return errors.New("事件标识不能为空")
+	}
+	if event.Name() == "" {
+		return errors.New("事件名称不能为空")
+	}
+	if event.AggregateID() == nil || event.AggregateID().Empty() {
+		return errors.New("发生领域事件的聚合标识不能为空")
+	}
+	if event.Version() < 1 {
+		return errors.New("无效的领域事件版本")
+	}
+	if event.CreatedAt().IsZero() {
+		return errors.New("领域事件发生时间不能为空")
+	}
+	return nil
 }
 
 // OccurEvent 组装一个已发生的领域事件

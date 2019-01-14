@@ -53,18 +53,33 @@ func ValidDomainEvent(event DomainEvent) error {
 // AggregateChanged 提供对 DomainEvent 基本外观的实现
 type AggregateChanged struct {
 	EventID          LongID    `json:"id"`
+	EventName        string    `json:"name"`
 	AggregateVersion uint      `json:"version"`
 	ChangeTime       time.Time `json:"createdAt"`
+}
+
+// OccurAggregateChanged 组装一个聚合变更领域事件
+func OccurAggregateChanged(name string, event DomainEvent) DomainEvent {
+	if ac, ok := event.(aggregateChanged); ok {
+		ac.withEventName(name)
+	}
+	return event
 }
 
 type aggregateChanged interface {
 	init()
 	withVersion(version uint)
+	withEventName(name string)
 }
 
 // ID 返回聚合变更事件标识
 func (ac AggregateChanged) ID() Identity {
 	return ac.EventID
+}
+
+// Name 返回领域事件名称
+func (ac AggregateChanged) Name() string {
+	return ac.EventName
 }
 
 // Version 返回聚合变更时的版本号
@@ -88,4 +103,8 @@ func (ac *AggregateChanged) init() {
 
 func (ac *AggregateChanged) withVersion(version uint) {
 	ac.AggregateVersion = version
+}
+
+func (ac *AggregateChanged) withEventName(name string) {
+	ac.EventName = name
 }

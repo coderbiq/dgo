@@ -22,6 +22,7 @@ func TestDomainEventToJson(t *testing.T) {
 	m := make(map[string]interface{})
 	assert.Empty(json.Unmarshal(data, &m))
 	assert.Contains(m, "id")
+	assert.Contains(m, "name")
 	assert.Contains(m, "aggregateId")
 	assert.Contains(m, "version")
 	assert.Contains(m, "createdAt")

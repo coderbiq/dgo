@@ -41,7 +41,9 @@ type accountCreated struct {
 
 // OccurAccountCreated 返回一个新的积分账户创建成功事件
 func OccurAccountCreated(aid model.LongID, ownerID model.StringID) AccountCreated {
-	return &accountCreated{AccountID: aid, OwnerIdentity: ownerID}
+	return model.OccurAggregateChanged(AccountCreatedEvent, &accountCreated{
+		AccountID:     aid,
+		OwnerIdentity: ownerID}).(AccountCreated)
 }
 
 // AccountCreatedFromJSON 通过 json 数据重建积分账户创建成功事件
@@ -51,10 +53,6 @@ func AccountCreatedFromJSON(data []byte) (AccountCreated, error) {
 		return nil, err
 	}
 	return e, nil
-}
-
-func (p accountCreated) Name() string {
-	return AccountCreatedEvent
 }
 
 func (p accountCreated) AggregateID() model.Identity {
@@ -72,15 +70,13 @@ type accountDeposited struct {
 }
 
 func occurDeposited(aid model.LongID, points Points) AccountDeposited {
-	return &accountDeposited{AccountID: aid, points: points}
+	return model.OccurAggregateChanged(
+		AccountDepositedEvent,
+		&accountDeposited{AccountID: aid, points: points}).(AccountDeposited)
 }
 
 func (p accountDeposited) AggregateID() model.Identity {
 	return p.AccountID
-}
-
-func (p accountDeposited) Name() string {
-	return AccountDepositedEvent
 }
 
 func (p accountDeposited) Points() Points {
@@ -94,15 +90,13 @@ type accountConsumed struct {
 }
 
 func occurConsumed(aid model.LongID, points Points) AccountConsumed {
-	return &accountConsumed{AccountID: aid, points: points}
+	return model.OccurAggregateChanged(
+		AccountConsumedEvent,
+		&accountConsumed{AccountID: aid, points: points}).(AccountConsumed)
 }
 
 func (p accountConsumed) AggregateID() model.Identity {
 	return p.AccountID
-}
-
-func (p accountConsumed) Name() string {
-	return AccountConsumedEvent
 }
 
 func (p accountConsumed) Points() Points {

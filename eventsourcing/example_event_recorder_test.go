@@ -5,17 +5,14 @@ import (
 	"github.com/coderbiq/dgo/model"
 )
 
-// Account 定义一个持有事件记录器的聚合模型
+// Account 在聚合模型内部使用一个 EventSourcing 功能的事件记录器
 type Account struct {
-	// 聚合内部持有的是一个带有事件回放功能的事件记录器
 	events *eventsourcing.EventRecorder
-
-	ID   model.LongID
-	Name string
+	ID     model.LongID
+	Name   string
 }
 
-// CommitEvents 持有事件记录器的聚合应该实现 EventProducer 接口，让应用服务可以将聚合内产生的
-// 事件提交给一些事件发布器。事件发布器可以将事件提交到消息中间件、持久化存储、事件总线等进行后续操作
+// CommitEvents 方法可以用于将聚合内部产生的领域事件发布到事件存储
 func (account *Account) CommitEvents(publishers ...model.EventPublisher) {
 	account.events.CommitToPublisher(publishers...)
 }
@@ -43,11 +40,9 @@ func RegisterAccount(name string) *Account {
 	return account
 }
 
-// AccountCreated 定义聚合模型创建成功事件
+// AccountCreated 账户创建成功事件
 type AccountCreated struct {
-	// 通过组合 AggreateChanged 获取领域事件的基本能力
 	model.AggregateChanged
-
 	AccountID   model.LongID `json:"aggregateId"`
 	AccountName string       `json:"accountName"`
 }
@@ -63,4 +58,11 @@ func occurAccountCreate(aid model.LongID, name string) *AccountCreated {
 
 func (event AccountCreated) AggregateID() model.Identity {
 	return event.AccountID
+}
+
+func ExampleEventRecorder() {
+	var eventStore model.EventPublisher
+	account := RegisterAccount("test account")
+	// 将聚合内部产生的领域事件提交到事件存储中
+	account.CommitEvents(eventStore)
 }

@@ -2,21 +2,21 @@ package model_test
 
 import "github.com/coderbiq/dgo/model"
 
-// Account 定义一个持有事件记录器的聚合模型
+// Account 定义聚合模型，在聚合模型内部使用事件记录器用于存储聚合内部产生的各种领域事件
 type Account struct {
-	// 在聚合内部持有一个事件记录器实例，用例记录聚合在本次会话过程中发生的领域事件
 	events *model.EventRecorder
-
-	ID   model.LongID
-	Name string
+	ID     model.LongID
+	Name   string
 }
 
-// CommitEvents 持有事件记录器的聚合应该实现 EventProducer 接口，让应用服务可以将聚合内产生的
-// 事件提交给一些事件发布器。事件发布器可以将事件提交到消息中间件、持久化存储、事件总线等进行后续操作
+// CommitEvents 方法让聚合外部可以将聚合内发生的事件提交到事件发布器
 func (account *Account) CommitEvents(publishers ...model.EventPublisher) {
 	account.events.CommitToPublisher(publishers...)
 }
 
+// 注册账户业务命令方法
+//
+// 在修改完聚合的内部状态后将产生的领域事件记录到事件记录器
 func RegisterAccount(name string) *Account {
 	account := &Account{events: model.NewEventRecorder(0)}
 	account.ID = model.IDGenerator.LongID()
@@ -26,11 +26,9 @@ func RegisterAccount(name string) *Account {
 	return account
 }
 
-// AccountCreated 定义聚合模型创建成功事件
+// AccountCreated 账户创建成功事件，存储领域事件的相关信息
 type AccountCreated struct {
-	// 通过组合 AggreateChanged 获取领域事件的基本能力
 	model.AggregateChanged
-
 	AccountID   model.LongID `json:"aggregateId"`
 	AccountName string       `json:"accountName"`
 }
@@ -46,4 +44,11 @@ func occurAccountCreate(aid model.LongID, name string) *AccountCreated {
 
 func (event AccountCreated) AggregateID() model.Identity {
 	return event.AccountID
+}
+
+func ExampleEventRecorder() {
+	var eventBus model.EventPublisher
+	account := RegisterAccount("test account")
+	// 应用层中调用聚合执行完业务指令后，将聚合内部产生的领域事件发布到系统
+	account.CommitEvents(eventBus)
 }

@@ -18,24 +18,24 @@ type (
 
 // BaseAccount 实现基本的积分账户模型
 type BaseAccount struct {
-	id      model.LongID
-	ownerID model.StringID
-	points  Points
+	Identity      model.LongID
+	OwnerIdentity model.StringID
+	CurPoints     Points
 }
 
 // ID 返回积分账户标识
 func (a BaseAccount) ID() model.LongID {
-	return a.id
+	return a.Identity
 }
 
 // OwnerID 返回积分账户所属的会员标识
 func (a BaseAccount) OwnerID() model.StringID {
-	return a.ownerID
+	return a.OwnerIdentity
 }
 
 // Points 返回积分账户中当前的可用积分
 func (a BaseAccount) Points() Points {
-	return a.points
+	return a.CurPoints
 }
 
 // Inc 返回当前积分加上一个积分值后的新积分值

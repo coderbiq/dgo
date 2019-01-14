@@ -40,7 +40,7 @@ type accountCreated struct {
 
 // OccurAccountCreated 返回一个新的积分账户创建成功事件
 func OccurAccountCreated(aid AccountID, ownerID CustomerID) AccountCreated {
-	e := accountCreated{
+	e := &accountCreated{
 		AggregateChanged: model.AggregateChanged{
 			Payload: map[string]interface{}{
 				"aggregateId": aid.String(),

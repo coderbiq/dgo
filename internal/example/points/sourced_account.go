@@ -2,19 +2,26 @@ package points
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/coderbiq/dgo/eventsourcing"
 	"github.com/coderbiq/dgo/model"
 )
 
-type sourcedCqrsAccount struct {
+type sourcedAccount struct {
 	baseAccount
 	events *eventsourcing.EventRecorder
+
+	// 展示业务模型
+	DepositedPoints Points    `json:"depositedPoints"`
+	ConsumedPoints  Points    `json:"consumedPoints"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
 }
 
-// RegisterSourcedCqrsAccount 注册一个 EventSourcing 风格的积分账户
-func RegisterSourcedCqrsAccount(ownerID model.StringID) Account {
-	a := new(sourcedCqrsAccount)
+// RegisterSourcedAccount 注册一个 EventSourcing 非 CQRS 风格的积分账户
+func RegisterSourcedAccount(ownerID model.StringID) Account {
+	a := new(sourcedAccount)
 	a.events = eventsourcing.EventRecorderFromSourced(a, 0)
 	a.events.RecordThan(OccurAccountCreated(
 		model.IDGenerator.LongID(),
@@ -22,11 +29,11 @@ func RegisterSourcedCqrsAccount(ownerID model.StringID) Account {
 	return a
 }
 
-func (a *sourcedCqrsAccount) Deposit(points Points) {
+func (a *sourcedAccount) Deposit(points Points) {
 	a.events.RecordThan(occurDeposited(a.id, points))
 }
 
-func (a *sourcedCqrsAccount) Consume(points Points) error {
+func (a *sourcedAccount) Consume(points Points) error {
 	if !a.points.GreaterThan(points) {
 		return fmt.Errorf("当前账户积分为 %d 不足消费额 %d", a.points, points)
 	}
@@ -34,25 +41,35 @@ func (a *sourcedCqrsAccount) Consume(points Points) error {
 	return nil
 }
 
-func (a sourcedCqrsAccount) Version() uint {
+func (a sourcedAccount) Version() uint {
 	return a.events.LastVersion()
 }
 
-func (a *sourcedCqrsAccount) CommitEvents(publishers ...model.EventPublisher) {
+func (a *sourcedAccount) CommitEvents(publishers ...model.EventPublisher) {
 	a.events.CommitToPublisher(publishers...)
 }
 
-func (a *sourcedCqrsAccount) Apply(event model.DomainEvent) {
+func (a *sourcedAccount) Apply(event model.DomainEvent) {
 	switch event.Name() {
 	case AccountCreatedEvent:
 		a.id = event.AggregateID().(model.LongID)
 		a.ownerID = event.(AccountCreated).OwnerID()
+		a.DepositedPoints = Points(0)
+		a.ConsumedPoints = Points(0)
+		a.CreatedAt = event.CreatedAt()
+		a.UpdatedAt = event.CreatedAt()
 		break
 	case AccountDepositedEvent:
-		a.points = a.points.Inc(event.(AccountDeposited).Points())
+		points := event.(AccountDeposited).Points()
+		a.points = a.points.Inc(points)
+		a.DepositedPoints = a.DepositedPoints.Inc(points)
+		a.UpdatedAt = event.CreatedAt()
 		break
 	case AccountConsumedEvent:
-		a.points = a.points.Dec(event.(AccountConsumed).Points())
+		points := event.(AccountConsumed).Points()
+		a.points = a.points.Dec(points)
+		a.ConsumedPoints = a.ConsumedPoints.Inc(points)
+		a.UpdatedAt = event.CreatedAt()
 		break
 	}
 }

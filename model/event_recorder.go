@@ -23,8 +23,8 @@ func NewEventRecorder(version uint) *EventRecorder {
 func (r *EventRecorder) RecordThan(event DomainEvent) {
 	if aggregateChanged, ok := event.(aggregateChanged); ok {
 		r.version++
-		aggregateChanged.Init()
-		aggregateChanged.WithVersion(r.version)
+		aggregateChanged.init()
+		aggregateChanged.withVersion(r.version)
 	}
 	if err := ValidDomainEvent(event); err != nil {
 		panic(err)

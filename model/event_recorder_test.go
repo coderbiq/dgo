@@ -54,7 +54,7 @@ func (suite *eventRecorderTestSuite) TestCommitToPublisher() {
 }
 
 func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
-	ownerID := model.IdentityGenerator()
+	ownerID := model.IDGenerator.StringID()
 	account := points.RegisterOrmAccount(ownerID)
 	suite.True(ownerID.Equal(account.OwnerID()))
 	suite.False(account.ID().Empty())
@@ -68,8 +68,8 @@ func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
 
 func (suite *eventRecorderTestSuite) newEvent() model.DomainEvent {
 	return points.OccurAccountCreated(
-		model.IdentityGenerator(),
-		model.IdentityGenerator())
+		model.IDGenerator.LongID(),
+		model.IDGenerator.StringID())
 }
 
 func TestEventRecorderSuite(t *testing.T) {

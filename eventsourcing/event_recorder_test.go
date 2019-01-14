@@ -11,7 +11,7 @@ import (
 )
 
 func TestSourcedEventRecorder(t *testing.T) {
-	ownerID := model.StringID(model.IdentityGenerator().String())
+	ownerID := model.IDGenerator.StringID()
 	account := points.RegisterSourcedAccount(ownerID)
 
 	assert := assert.New(t)

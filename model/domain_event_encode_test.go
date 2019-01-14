@@ -9,16 +9,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEncode(t *testing.T) {
+func TestDomainEventToJson(t *testing.T) {
 	assert := assert.New(t)
 
-	e := points.OccurAccountCreated(model.IdentityGenerator(), model.IdentityGenerator())
+	e := points.OccurAccountCreated(
+		model.IDGenerator.LongID(),
+		model.IDGenerator.StringID())
+
 	data, err := json.Marshal(e)
 	assert.Empty(err)
+
+	m := make(map[string]interface{})
+	assert.Empty(json.Unmarshal(data, &m))
+	assert.Contains(m, "id")
+	assert.Contains(m, "aggregateId")
+	assert.Contains(m, "version")
+	assert.Contains(m, "createdAt")
+	assert.Contains(m, "ownerId")
 
 	e2, err := points.AccountCreatedFromJSON(data)
 	assert.Empty(err)
 
-	data2, err := json.Marshal(e2)
-	assert.Equal(data, data2)
+	data2, _ := json.Marshal(e2)
+	assert.Equal(string(data), string(data2))
 }

@@ -19,7 +19,7 @@ type (
 	// AccountCreated 积分账户创建事件信息
 	AccountCreated interface {
 		model.DomainEvent
-		OwnerID() CustomerID
+		OwnerID() model.StringID
 	}
 	// AccountDeposited 积分账户充值事件信息
 	AccountDeposited interface {
@@ -35,26 +35,16 @@ type (
 
 type accountCreated struct {
 	model.AggregateChanged
-	// ownerID CustomerID
+	AccountID     model.LongID   `json:"aggregateId"`
+	OwnerIdentity model.StringID `json:"ownerId"`
 }
 
 // OccurAccountCreated 返回一个新的积分账户创建成功事件
-func OccurAccountCreated(aid AccountID, ownerID CustomerID) AccountCreated {
-	e := &accountCreated{
-		AggregateChanged: model.AggregateChanged{
-			Payload: map[string]interface{}{
-				"aggregateId": aid.String(),
-				"ownerId":     ownerID.String(),
-			},
-		},
-	}
-	e.Init()
-	return e
-	// return model.OccurEvent(
-	// 	aid,
-	// 	&accountCreated{ownerID: ownerID}).(AccountCreated)
+func OccurAccountCreated(aid model.LongID, ownerID model.StringID) AccountCreated {
+	return &accountCreated{AccountID: aid, OwnerIdentity: ownerID}
 }
 
+// AccountCreatedFromJSON 通过 json 数据重建积分账户创建成功事件
 func AccountCreatedFromJSON(data []byte) (AccountCreated, error) {
 	e := &accountCreated{}
 	if err := json.Unmarshal(data, e); err != nil {
@@ -63,53 +53,58 @@ func AccountCreatedFromJSON(data []byte) (AccountCreated, error) {
 	return e, nil
 }
 
-// Name 返回积分账户创建成功事件名称
 func (p accountCreated) Name() string {
 	return AccountCreatedEvent
 }
 
-// OwnerID 返回新建积分账户所属的会员唯一标识
-func (p accountCreated) OwnerID() CustomerID {
-	return model.IDFromInterface(p.Payload["ownerId"])
-	// return p.ownerID
+func (p accountCreated) AggregateID() model.Identity {
+	return p.AccountID
+}
+
+func (p accountCreated) OwnerID() model.StringID {
+	return p.OwnerIdentity
 }
 
 type accountDeposited struct {
 	model.AggregateChanged
-	points Points
+	AccountID model.LongID
+	points    Points
 }
 
-func occurDeposited(aid AccountID, points Points) AccountDeposited {
-	return model.OccurEvent(
-		aid,
-		&accountDeposited{points: points}).(AccountDeposited)
+func occurDeposited(aid model.LongID, points Points) AccountDeposited {
+	return &accountDeposited{AccountID: aid, points: points}
 }
 
-// Name 返回积分账户充值事件名称
+func (p accountDeposited) AggregateID() model.Identity {
+	return p.AccountID
+}
+
 func (p accountDeposited) Name() string {
 	return AccountDepositedEvent
 }
 
-// Points 返回积分账户充值金额
 func (p accountDeposited) Points() Points {
 	return p.points
 }
 
 type accountConsumed struct {
 	model.AggregateChanged
-	points Points
+	AccountID model.LongID
+	points    Points
 }
 
-func occurConsumed(aid AccountID, points Points) AccountConsumed {
-	return model.OccurEvent(aid, &accountConsumed{points: points}).(AccountConsumed)
+func occurConsumed(aid model.LongID, points Points) AccountConsumed {
+	return &accountConsumed{AccountID: aid, points: points}
 }
 
-// Name 返回积分账户消费事件名称
+func (p accountConsumed) AggregateID() model.Identity {
+	return p.AccountID
+}
+
 func (p accountConsumed) Name() string {
 	return AccountConsumedEvent
 }
 
-// Points 返回积分账户消息金额
 func (p accountConsumed) Points() Points {
 	return p.points
 }

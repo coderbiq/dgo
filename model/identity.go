@@ -6,21 +6,14 @@ import (
 	"github.com/bwmarrin/snowflake"
 )
 
-// IdentityGenerator 存储当前使用的标识生成器
+// IDGenerator 存储当前使用的标识生成器
 // 主要用于为消息生成唯一标识，也可用于为聚合或实体生成标识。
-var IdentityGenerator identityGenerator = defIdentityGenerator
+var IDGenerator IdentityGenerator = NewSnowflakeIDGenerator(1)
 
-type identityGenerator func() Identity
-
-// IDFromInterface 根据一个 Interface 生成一个 Identity 实例
-func IDFromInterface(v interface{}) Identity {
-	switch id := v.(type) {
-	case string:
-		return StringID(id)
-	case int64:
-		return LongID(id)
-	}
-	return nil
+// IdentityGenerator 定义标识生成器
+type IdentityGenerator interface {
+	StringID() StringID
+	LongID() LongID
 }
 
 // StringID 字符串类型的标识模型
@@ -65,10 +58,26 @@ func (id LongID) Empty() bool {
 	return int64(id) == 0
 }
 
-func defIdentityGenerator() Identity {
-	node, err := snowflake.NewNode(1)
+// SnowflakeIDGenerator 使用 Twitter snowflake 算法的标识生成器
+type SnowflakeIDGenerator struct {
+	node *snowflake.Node
+}
+
+// NewSnowflakeIDGenerator 创建一个 snowflake 算法的标识生成器
+func NewSnowflakeIDGenerator(n int64) *SnowflakeIDGenerator {
+	node, err := snowflake.NewNode(n)
 	if err != nil {
 		panic(err)
 	}
-	return LongID(node.Generate())
+	return &SnowflakeIDGenerator{node: node}
+}
+
+// StringID 生成一个字符串标识
+func (g SnowflakeIDGenerator) StringID() StringID {
+	return StringID(g.LongID().String())
+}
+
+// LongID 生成一个 int64 标识
+func (g SnowflakeIDGenerator) LongID() LongID {
+	return LongID(g.node.Generate())
 }

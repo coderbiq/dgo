@@ -13,9 +13,9 @@ type ormAccount struct {
 }
 
 // RegisterOrmAccount 注册一个 ORM 风格的积分账户
-func RegisterOrmAccount(ownerID CustomerID) Account {
+func RegisterOrmAccount(ownerID model.StringID) Account {
 	a := &ormAccount{events: model.NewEventRecorder(0)}
-	a.id = model.IdentityGenerator()
+	a.id = model.IDGenerator.LongID()
 	a.ownerID = ownerID
 	a.events.RecordThan(OccurAccountCreated(a.id, ownerID))
 	return a

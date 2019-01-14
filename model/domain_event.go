@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 )
@@ -51,83 +50,42 @@ func ValidDomainEvent(event DomainEvent) error {
 	return nil
 }
 
-// OccurEvent 组装一个已发生的领域事件
-func OccurEvent(aggregateID Identity, event DomainEvent) DomainEvent {
-	if changed, ok := event.(aggregateChanged); ok {
-		changed.WithAggregateID(aggregateID)
-		changed.Init()
-	}
-	return event
-}
-
 // AggregateChanged 提供对 DomainEvent 基本外观的实现
 type AggregateChanged struct {
-	Payload map[string]interface{}
+	EventID          LongID    `json:"id"`
+	AggregateVersion uint      `json:"version"`
+	ChangeTime       time.Time `json:"createdAt"`
 }
 
 type aggregateChanged interface {
-	Init()
-	WithVersion(version uint)
-	WithAggregateID(id Identity)
+	init()
+	withVersion(version uint)
 }
 
 // ID 返回聚合变更事件标识
 func (ac AggregateChanged) ID() Identity {
-	return IDFromInterface(ac.Payload["id"])
-}
-
-// AggregateID 返回发生变更的聚合标识
-func (ac AggregateChanged) AggregateID() Identity {
-	return IDFromInterface(ac.Payload["aggregateId"])
+	return ac.EventID
 }
 
 // Version 返回聚合变更时的版本号
 func (ac AggregateChanged) Version() uint {
-	if v, has := ac.Payload["version"]; has {
-		return v.(uint)
-	}
-	return 0
+	return ac.AggregateVersion
 }
 
 // CreatedAt 返回聚合变更的时间
 func (ac AggregateChanged) CreatedAt() time.Time {
-	return ac.Payload["createdAt"].(time.Time)
+	return ac.ChangeTime
 }
 
-// Init 初始化变更事件
-func (ac *AggregateChanged) Init() {
-	if ac.Payload == nil {
-		ac.Payload = map[string]interface{}{}
+func (ac *AggregateChanged) init() {
+	if ac.EventID.Empty() {
+		ac.EventID = IDGenerator.LongID()
 	}
-	if _, has := ac.Payload["id"]; !has {
-		ac.Payload["id"] = IdentityGenerator().String()
-	}
-	if _, has := ac.Payload["createdAt"]; !has {
-		ac.Payload["createdAt"] = time.Now()
+	if ac.ChangeTime.IsZero() {
+		ac.ChangeTime = time.Now()
 	}
 }
 
-// WithAggregateID 指定发生变更的聚合标识
-func (ac *AggregateChanged) WithAggregateID(id Identity) {
-	ac.Payload["aggregateId"] = id.String()
-}
-
-// WithVersion 指定聚合变更版本
-func (ac *AggregateChanged) WithVersion(version uint) {
-	ac.Payload["version"] = version
-}
-
-// MarshalJSON json 序列化
-func (ac AggregateChanged) MarshalJSON() ([]byte, error) {
-	return json.Marshal(ac.Payload)
-}
-
-// UnmarshalJSON json 反序列化
-func (ac *AggregateChanged) UnmarshalJSON(data []byte) error {
-	payload := map[string]interface{}{}
-	if err := json.Unmarshal(data, &payload); err != nil {
-		return err
-	}
-	ac.Payload = payload
-	return nil
+func (ac *AggregateChanged) withVersion(version uint) {
+	ac.AggregateVersion = version
 }

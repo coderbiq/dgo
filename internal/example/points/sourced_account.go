@@ -13,11 +13,11 @@ type sourcedAccount struct {
 }
 
 // RegisterSourcedAccount 注册一个 EventSourcing 风格的积分账户
-func RegisterSourcedAccount(ownerID CustomerID) Account {
+func RegisterSourcedAccount(ownerID model.StringID) Account {
 	a := new(sourcedAccount)
 	a.events = eventsourcing.EventRecorderFromSourced(a, 0)
 	a.events.RecordThan(OccurAccountCreated(
-		model.IdentityGenerator(),
+		model.IDGenerator.LongID(),
 		ownerID))
 	return a
 }
@@ -45,7 +45,7 @@ func (a *sourcedAccount) CommitEvents(publishers ...model.EventPublisher) {
 func (a *sourcedAccount) Apply(event model.DomainEvent) {
 	switch event.Name() {
 	case AccountCreatedEvent:
-		a.id = event.AggregateID()
+		a.id = event.AggregateID().(model.LongID)
 		a.ownerID = event.(AccountCreated).OwnerID()
 		break
 	case AccountDepositedEvent:

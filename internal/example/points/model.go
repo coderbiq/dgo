@@ -7,16 +7,13 @@ import (
 )
 
 type (
-	// AccountID 定义积分账户唯一标识模型
-	AccountID model.Identity
-	// CustomerID 定义积分账户所属会员的唯一标识模型
-	CustomerID model.Identity
 	// Points 定义积分点数据模型
 	Points uint
+
 	// Account 定义积分账户外观
 	Account interface {
-		ID() AccountID
-		OwnerID() CustomerID
+		ID() model.LongID
+		OwnerID() model.StringID
 		Points() Points
 		Deposit(points Points)
 		Consume(points Points) error
@@ -25,7 +22,7 @@ type (
 	// AccountReadModel 定义积分账户读模型
 	AccountReadModel struct {
 		ID              int64
-		OwnerID         int64
+		OwnerID         string
 		Points          uint
 		DepositedPoints uint
 		ConsumedPoints  uint
@@ -42,16 +39,16 @@ type (
 )
 
 type baseAccount struct {
-	id      AccountID
-	ownerID CustomerID
+	id      model.LongID
+	ownerID model.StringID
 	points  Points
 }
 
-func (a baseAccount) ID() AccountID {
+func (a baseAccount) ID() model.LongID {
 	return a.id
 }
 
-func (a baseAccount) OwnerID() CustomerID {
+func (a baseAccount) OwnerID() model.StringID {
 	return a.ownerID
 }
 

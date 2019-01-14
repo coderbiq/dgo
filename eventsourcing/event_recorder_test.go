@@ -12,7 +12,7 @@ import (
 
 func TestSourcedEventRecorder(t *testing.T) {
 	ownerID := model.IDGenerator.StringID()
-	account := points.RegisterSourcedAccount(ownerID)
+	account := points.RegisterSourcedCqrsAccount(ownerID)
 
 	assert := assert.New(t)
 	assert.True(ownerID.Equal(account.OwnerID()))

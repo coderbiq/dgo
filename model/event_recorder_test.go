@@ -55,7 +55,7 @@ func (suite *eventRecorderTestSuite) TestCommitToPublisher() {
 
 func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
 	ownerID := model.IDGenerator.StringID()
-	account := points.RegisterOrmAccount(ownerID)
+	account := points.RegisterOrmCqrsAccount(ownerID)
 	suite.True(ownerID.Equal(account.OwnerID()))
 	suite.False(account.ID().Empty())
 

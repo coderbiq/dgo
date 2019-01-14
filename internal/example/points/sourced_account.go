@@ -7,14 +7,14 @@ import (
 	"github.com/coderbiq/dgo/model"
 )
 
-type sourcedAccount struct {
+type sourcedCqrsAccount struct {
 	baseAccount
 	events *eventsourcing.EventRecorder
 }
 
-// RegisterSourcedAccount 注册一个 EventSourcing 风格的积分账户
-func RegisterSourcedAccount(ownerID model.StringID) Account {
-	a := new(sourcedAccount)
+// RegisterSourcedCqrsAccount 注册一个 EventSourcing 风格的积分账户
+func RegisterSourcedCqrsAccount(ownerID model.StringID) Account {
+	a := new(sourcedCqrsAccount)
 	a.events = eventsourcing.EventRecorderFromSourced(a, 0)
 	a.events.RecordThan(OccurAccountCreated(
 		model.IDGenerator.LongID(),
@@ -22,11 +22,11 @@ func RegisterSourcedAccount(ownerID model.StringID) Account {
 	return a
 }
 
-func (a *sourcedAccount) Deposit(points Points) {
+func (a *sourcedCqrsAccount) Deposit(points Points) {
 	a.events.RecordThan(occurDeposited(a.id, points))
 }
 
-func (a *sourcedAccount) Consume(points Points) error {
+func (a *sourcedCqrsAccount) Consume(points Points) error {
 	if !a.points.GreaterThan(points) {
 		return fmt.Errorf("当前账户积分为 %d 不足消费额 %d", a.points, points)
 	}
@@ -34,15 +34,15 @@ func (a *sourcedAccount) Consume(points Points) error {
 	return nil
 }
 
-func (a sourcedAccount) Version() uint {
+func (a sourcedCqrsAccount) Version() uint {
 	return a.events.LastVersion()
 }
 
-func (a *sourcedAccount) CommitEvents(publishers ...model.EventPublisher) {
+func (a *sourcedCqrsAccount) CommitEvents(publishers ...model.EventPublisher) {
 	a.events.CommitToPublisher(publishers...)
 }
 
-func (a *sourcedAccount) Apply(event model.DomainEvent) {
+func (a *sourcedCqrsAccount) Apply(event model.DomainEvent) {
 	switch event.Name() {
 	case AccountCreatedEvent:
 		a.id = event.AggregateID().(model.LongID)

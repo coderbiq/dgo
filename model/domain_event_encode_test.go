@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/coderbiq/dgo/internal/example/points"
 	"github.com/coderbiq/dgo/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,9 +11,7 @@ import (
 func TestDomainEventToJson(t *testing.T) {
 	assert := assert.New(t)
 
-	e := points.OccurAccountCreated(
-		model.IDGenerator.LongID(),
-		model.IDGenerator.StringID())
+	e := occurAccountCreate(model.IDGenerator.LongID(), "test account")
 
 	data, err := json.Marshal(e)
 	assert.Empty(err)
@@ -26,10 +23,10 @@ func TestDomainEventToJson(t *testing.T) {
 	assert.Contains(m, "aggregateId")
 	assert.Contains(m, "version")
 	assert.Contains(m, "createdAt")
-	assert.Contains(m, "ownerId")
+	assert.Contains(m, "accountName")
 
-	e2, err := points.AccountCreatedFromJSON(data)
-	assert.Empty(err)
+	e2 := new(AccountCreated)
+	assert.Empty(json.Unmarshal(data, e2))
 
 	data2, _ := json.Marshal(e2)
 	assert.Equal(string(data), string(data2))

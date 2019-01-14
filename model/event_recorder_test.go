@@ -54,16 +54,15 @@ func (suite *eventRecorderTestSuite) TestCommitToPublisher() {
 }
 
 func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
-	ownerID := model.IDGenerator.StringID()
-	account := points.RegisterOrmCqrsAccount(ownerID)
-	suite.True(ownerID.Equal(account.OwnerID()))
-	suite.False(account.ID().Empty())
-
 	ctrl := gomock.NewController(suite.T())
 	defer ctrl.Finish()
 	publisher := mocks.NewMockEventPublisher(ctrl)
-	publisher.EXPECT().Publish(gomock.Any()).Times(1)
-	account.(model.EventProducer).CommitEvents(publisher)
+	publisher.EXPECT().
+		Publish(gomock.AssignableToTypeOf(&AccountCreated{})).
+		Times(1)
+
+	account := RegisterAccount("account name")
+	account.CommitEvents(publisher)
 }
 
 func (suite *eventRecorderTestSuite) newEvent() model.DomainEvent {

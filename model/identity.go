@@ -58,6 +58,11 @@ func (id LongID) Empty() bool {
 	return int64(id) == 0
 }
 
+// Int64 返回标识的原始值
+func (id LongID) Int64() int64 {
+	return int64(id)
+}
+
 // SnowflakeIDGenerator 使用 Twitter snowflake 算法的标识生成器
 type SnowflakeIDGenerator struct {
 	node *snowflake.Node

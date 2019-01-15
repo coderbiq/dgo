@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"errors"
 	"time"
 )
@@ -134,42 +135,74 @@ func (ac *AggregateChanged) withEventName(name string) {
 }
 
 type simpleEventBus struct {
-	listeners map[string][]chan<- DomainEvent
+	concurrent    uint
+	eventChannel  chan DomainEvent
+	handleChannel chan *simpleEventBusHandle
+	listeners     map[string][]EventConsumer
+}
+
+type simpleEventBusHandle struct {
+	event    DomainEvent
+	consumer EventConsumer
 }
 
 // SimpleEventBus 创建一个简单的消息总线
-func SimpleEventBus() EventBus {
-	return &simpleEventBus{listeners: map[string][]chan<- DomainEvent{}}
+func SimpleEventBus(concurrent uint) EventBus {
+	return &simpleEventBus{
+		concurrent:    concurrent,
+		eventChannel:  make(chan DomainEvent, 1000),
+		handleChannel: make(chan *simpleEventBusHandle),
+		listeners:     map[string][]EventConsumer{},
+	}
 }
 
 func (bus simpleEventBus) Publish(events ...DomainEvent) {
 	for _, event := range events {
-		listeners, has := bus.listeners[event.Name()]
+		_, has := bus.listeners[event.Name()]
 		if !has {
 			continue
 		}
-		for _, listener := range listeners {
-			go func(listener chan<- DomainEvent) {
-				listener <- event
-			}(listener)
-		}
+		bus.eventChannel <- event
 	}
 }
 
 func (bus simpleEventBus) Listen(eventName string, consumer EventConsumer) {
-	c := make(chan DomainEvent, 10)
-	go func(c <-chan DomainEvent) {
-		for {
-			select {
-			case e := <-c:
-				consumer.Handle(e)
-			}
-		}
-	}(c)
 	listeners, has := bus.listeners[eventName]
 	if !has {
-		listeners = []chan<- DomainEvent{}
+		listeners = []EventConsumer{}
 	}
-	listeners = append(listeners, c)
+	listeners = append(listeners, consumer)
 	bus.listeners[eventName] = listeners
+}
+
+// TODO: context done 时如果事件流中有未处理的消息将丢失，应该把未处理消息持久化再退出
+func (bus simpleEventBus) Run(ctx context.Context) {
+	for i := uint(0); i < bus.concurrent; i++ {
+		go func(ctx context.Context, c <-chan *simpleEventBusHandle) {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case handleInfo := <-c:
+					handleInfo.consumer.Handle(handleInfo.event)
+					break
+				}
+			}
+		}(ctx, bus.handleChannel)
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case event := <-bus.eventChannel:
+			consumers := bus.listeners[event.Name()]
+			for _, consumer := range consumers {
+				bus.handleChannel <- &simpleEventBusHandle{
+					consumer: consumer,
+					event:    event,
+				}
+			}
+			break
+		}
+	}
 }

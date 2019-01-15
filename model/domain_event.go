@@ -30,6 +30,30 @@ type EventProducer interface {
 	CommitEvents(publishers ...EventPublisher)
 }
 
+// EventConsumer 定义领域事件消费者
+type EventConsumer interface {
+	Handle(DomainEvent)
+}
+
+// EventBus 定义消息总线
+type EventBus interface {
+	EventPublisher
+	Listen(eventName string, consumer EventConsumer)
+}
+
+// EventConsumerFunc 包装一个领域事件处理函数为领域事件消费者
+func EventConsumerFunc(handle func(DomainEvent)) EventConsumer {
+	return &simpleEventConsumer{handle: handle}
+}
+
+type simpleEventConsumer struct {
+	handle func(DomainEvent)
+}
+
+func (consume *simpleEventConsumer) Handle(event DomainEvent) {
+	consume.handle(event)
+}
+
 // ValidDomainEvent 验证一个领域事件是否完整
 func ValidDomainEvent(event DomainEvent) error {
 	if event.ID() == nil || event.ID().Empty() {
@@ -107,4 +131,45 @@ func (ac *AggregateChanged) withVersion(version uint) {
 
 func (ac *AggregateChanged) withEventName(name string) {
 	ac.EventName = name
+}
+
+type simpleEventBus struct {
+	listeners map[string][]chan<- DomainEvent
+}
+
+// SimpleEventBus 创建一个简单的消息总线
+func SimpleEventBus() EventBus {
+	return &simpleEventBus{listeners: map[string][]chan<- DomainEvent{}}
+}
+
+func (bus simpleEventBus) Publish(events ...DomainEvent) {
+	for _, event := range events {
+		listeners, has := bus.listeners[event.Name()]
+		if !has {
+			continue
+		}
+		for _, listener := range listeners {
+			go func(listener chan<- DomainEvent) {
+				listener <- event
+			}(listener)
+		}
+	}
+}
+
+func (bus simpleEventBus) Listen(eventName string, consumer EventConsumer) {
+	c := make(chan DomainEvent, 10)
+	go func(c <-chan DomainEvent) {
+		for {
+			select {
+			case e := <-c:
+				consumer.Handle(e)
+			}
+		}
+	}(c)
+	listeners, has := bus.listeners[eventName]
+	if !has {
+		listeners = []chan<- DomainEvent{}
+	}
+	listeners = append(listeners, c)
+	bus.listeners[eventName] = listeners
 }

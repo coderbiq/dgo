@@ -1,17 +1,17 @@
-package model_test
+package devent_test
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/coderbiq/dgo/model"
+	"github.com/coderbiq/dgo/base/vo"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDomainEventToJson(t *testing.T) {
 	assert := assert.New(t)
 
-	e := occurAccountCreate(model.IDGenerator.LongID(), "test account")
+	e := occurAccountCreate(vo.IDGenerator.LongID(), "test account")
 
 	data, err := json.Marshal(e)
 	assert.Empty(err)

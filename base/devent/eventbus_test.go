@@ -1,23 +1,24 @@
-package model_test
+package devent_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/coderbiq/dgo/model"
+	"github.com/coderbiq/dgo/base/devent"
+	"github.com/coderbiq/dgo/base/vo"
 )
 
 func TestEventBus(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	eventBus := model.SimpleEventBus(5)
+	eventBus := devent.SimpleEventBus(5)
 	go eventBus.(runner).Run(ctx)
 
 	assert := false
 	handleEvents := 0
 	eventBus.Listen(
 		"accountCreated",
-		model.EventConsumerFunc(func(event model.DomainEvent) {
+		devent.EventConsumerFunc(func(event devent.DomainEvent) {
 			defer func() {
 				if handleEvents == 2 {
 					assert = true
@@ -34,8 +35,8 @@ func TestEventBus(t *testing.T) {
 			}
 		}))
 
-	eventBus.Publish(occurAccountCreate(model.IDGenerator.LongID(), "test"))
-	eventBus.Publish(occurAccountCreate(model.IDGenerator.LongID(), "test2"))
+	eventBus.Publish(occurAccountCreate(vo.IDGenerator.LongID(), "test"))
+	eventBus.Publish(occurAccountCreate(vo.IDGenerator.LongID(), "test2"))
 
 	<-ctx.Done()
 	if !assert {

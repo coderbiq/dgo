@@ -1,22 +1,22 @@
-package model_test
+package devent_test
 
 import (
 	"testing"
 
-	"github.com/coderbiq/dgo/internal/example/points"
+	"github.com/coderbiq/dgo/base/devent"
+	"github.com/coderbiq/dgo/base/vo"
 	"github.com/coderbiq/dgo/internal/mocks"
-	"github.com/coderbiq/dgo/model"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 )
 
 type eventRecorderTestSuite struct {
 	suite.Suite
-	recorder *model.EventRecorder
+	recorder *devent.EventRecorder
 }
 
 func (suite *eventRecorderTestSuite) SetupTest() {
-	suite.recorder = model.NewEventRecorder(0)
+	suite.recorder = devent.NewEventRecorder(0)
 }
 
 func (suite *eventRecorderTestSuite) TestDefaultStatus() {
@@ -65,10 +65,10 @@ func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
 	account.CommitEvents(publisher)
 }
 
-func (suite *eventRecorderTestSuite) newEvent() model.DomainEvent {
-	return points.OccurAccountCreated(
-		model.IDGenerator.LongID(),
-		model.IDGenerator.StringID())
+func (suite *eventRecorderTestSuite) newEvent() devent.DomainEvent {
+	return occurAccountCreate(
+		vo.IDGenerator.LongID(),
+		"test account")
 }
 
 func TestEventRecorderSuite(t *testing.T) {

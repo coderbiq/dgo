@@ -1,4 +1,4 @@
-package model
+package devent
 
 // EventRecorder 定义领域事件记录器
 //

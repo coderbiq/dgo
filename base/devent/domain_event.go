@@ -1,16 +1,18 @@
-package model
+package devent
 
 import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/coderbiq/dgo/base/vo"
 )
 
 // DomainEvent 定义领域事件外观
 type DomainEvent interface {
-	ID() Identity
+	ID() vo.Identity
 	Name() string
-	AggregateID() Identity
+	AggregateID() vo.Identity
 	Version() uint
 	CreatedAt() time.Time
 }
@@ -77,7 +79,7 @@ func ValidDomainEvent(event DomainEvent) error {
 
 // AggregateChanged 提供对 DomainEvent 基本外观的实现
 type AggregateChanged struct {
-	EventID          LongID    `json:"id"`
+	EventID          vo.LongID `json:"id"`
 	EventName        string    `json:"name"`
 	AggregateVersion uint      `json:"version"`
 	ChangeTime       time.Time `json:"createdAt"`
@@ -98,7 +100,7 @@ type aggregateChanged interface {
 }
 
 // ID 返回聚合变更事件标识
-func (ac AggregateChanged) ID() Identity {
+func (ac AggregateChanged) ID() vo.Identity {
 	return ac.EventID
 }
 
@@ -119,7 +121,7 @@ func (ac AggregateChanged) CreatedAt() time.Time {
 
 func (ac *AggregateChanged) init() {
 	if ac.EventID.Empty() {
-		ac.EventID = IDGenerator.LongID()
+		ac.EventID = vo.IDGenerator.LongID()
 	}
 	if ac.ChangeTime.IsZero() {
 		ac.ChangeTime = time.Now()

@@ -1,4 +1,4 @@
-package model
+package vo
 
 // ValueObject 定义值对象模型的外观
 type ValueObject interface {

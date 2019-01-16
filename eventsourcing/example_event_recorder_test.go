@@ -1,25 +1,26 @@
 package eventsourcing_test
 
 import (
+	"github.com/coderbiq/dgo/base/devent"
+	"github.com/coderbiq/dgo/base/vo"
 	"github.com/coderbiq/dgo/eventsourcing"
-	"github.com/coderbiq/dgo/model"
 )
 
 // Account 在聚合模型内部使用一个 EventSourcing 功能的事件记录器
 type Account struct {
 	events *eventsourcing.EventRecorder
-	ID     model.LongID
+	ID     vo.LongID
 	Name   string
 }
 
 // CommitEvents 方法可以用于将聚合内部产生的领域事件发布到事件存储
-func (account *Account) CommitEvents(publishers ...model.EventPublisher) {
+func (account *Account) CommitEvents(publishers ...devent.EventPublisher) {
 	account.events.CommitToPublisher(publishers...)
 }
 
 // 使用 EventSourcing 的聚合需要实现 EventSourcd 接口，
 // Repository 和 EventRecorder 可以利用这个接口将领域事件应用到聚合以重建出聚合的状态
-func (account *Account) Apply(event model.DomainEvent) {
+func (account *Account) Apply(event devent.DomainEvent) {
 	switch e := event.(type) {
 	case *AccountCreated:
 		account.ID = e.AccountID
@@ -34,7 +35,7 @@ func RegisterAccount(name string) *Account {
 	account := new(Account)
 	account.events = eventsourcing.EventRecorderFromSourced(account, 0)
 	account.events.RecordThan(occurAccountCreate(
-		model.IDGenerator.LongID(),
+		vo.IDGenerator.LongID(),
 		name,
 	))
 	return account
@@ -42,13 +43,13 @@ func RegisterAccount(name string) *Account {
 
 // AccountCreated 账户创建成功事件
 type AccountCreated struct {
-	model.AggregateChanged
-	AccountID   model.LongID `json:"aggregateId"`
-	AccountName string       `json:"accountName"`
+	devent.AggregateChanged
+	AccountID   vo.LongID `json:"aggregateId"`
+	AccountName string    `json:"accountName"`
 }
 
-func occurAccountCreate(aid model.LongID, name string) *AccountCreated {
-	return model.OccurAggregateChanged(
+func occurAccountCreate(aid vo.LongID, name string) *AccountCreated {
+	return devent.OccurAggregateChanged(
 		"accountCreated",
 		&AccountCreated{
 			AccountID:   aid,
@@ -56,12 +57,12 @@ func occurAccountCreate(aid model.LongID, name string) *AccountCreated {
 		}).(*AccountCreated)
 }
 
-func (event AccountCreated) AggregateID() model.Identity {
+func (event AccountCreated) AggregateID() vo.Identity {
 	return event.AccountID
 }
 
 func ExampleEventRecorder() {
-	var eventStore model.EventPublisher
+	var eventStore devent.EventPublisher
 	account := RegisterAccount("test account")
 	// 将聚合内部产生的领域事件提交到事件存储中
 	account.CommitEvents(eventStore)

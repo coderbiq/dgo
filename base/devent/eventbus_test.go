@@ -11,14 +11,14 @@ import (
 
 func TestEventBus(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	eventBus := devent.SimpleEventBus(5)
+	eventBus := devent.SimpleBus(5)
 	go eventBus.(runner).Run(ctx)
 
 	assert := false
 	handleEvents := 0
-	eventBus.AddRouter(devent.SimpleEventRouter(map[string][]devent.EventConsumer{
-		"accountCreated": []devent.EventConsumer{
-			devent.EventConsumerFunc(func(event devent.DomainEvent) {
+	eventBus.AddRouter(devent.SimpleRouter(map[string][]devent.Consumer{
+		"accountCreated": []devent.Consumer{
+			devent.ConsumerFunc(func(event devent.Event) {
 				defer func() {
 					if handleEvents == 2 {
 						assert = true

@@ -4,4 +4,4 @@
 mockgen -destination devent_mocks.go \
    -package mocks \
    github.com/coderbiq/dgo/base/devent \
-   EventPublisher
+   Publisher

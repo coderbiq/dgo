@@ -14,13 +14,13 @@ type Account struct {
 }
 
 // CommitEvents 方法可以用于将聚合内部产生的领域事件发布到事件存储
-func (account *Account) CommitEvents(publishers ...devent.EventPublisher) {
+func (account *Account) CommitEvents(publishers ...devent.Publisher) {
 	account.events.CommitToPublisher(publishers...)
 }
 
 // 使用 EventSourcing 的聚合需要实现 EventSourcd 接口，
 // Repository 和 EventRecorder 可以利用这个接口将领域事件应用到聚合以重建出聚合的状态
-func (account *Account) Apply(event devent.DomainEvent) {
+func (account *Account) Apply(event devent.Event) {
 	switch e := event.(type) {
 	case *AccountCreated:
 		account.ID = e.AccountID
@@ -62,7 +62,7 @@ func (event AccountCreated) AggregateID() vo.Identity {
 }
 
 func ExampleEventRecorder() {
-	var eventStore devent.EventPublisher
+	var eventStore devent.Publisher
 	account := RegisterAccount("test account")
 	// 将聚合内部产生的领域事件提交到事件存储中
 	account.CommitEvents(eventStore)

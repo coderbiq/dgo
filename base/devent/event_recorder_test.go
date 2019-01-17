@@ -12,11 +12,11 @@ import (
 
 type eventRecorderTestSuite struct {
 	suite.Suite
-	recorder *devent.EventRecorder
+	recorder *devent.Recorder
 }
 
 func (suite *eventRecorderTestSuite) SetupTest() {
-	suite.recorder = devent.NewEventRecorder(0)
+	suite.recorder = devent.NewRecorder(0)
 }
 
 func (suite *eventRecorderTestSuite) TestDefaultStatus() {
@@ -45,9 +45,9 @@ func (suite *eventRecorderTestSuite) TestCommitToPublisher() {
 	ctrl := gomock.NewController(suite.T())
 	defer ctrl.Finish()
 
-	publisher1 := mocks.NewMockEventPublisher(ctrl)
+	publisher1 := mocks.NewMockPublisher(ctrl)
 	publisher1.EXPECT().Publish(events[0], events[1]).Times(1)
-	publisher2 := mocks.NewMockEventPublisher(ctrl)
+	publisher2 := mocks.NewMockPublisher(ctrl)
 	publisher2.EXPECT().Publish(events[0], events[1]).Times(1)
 
 	suite.recorder.CommitToPublisher(publisher1, publisher2)
@@ -56,7 +56,7 @@ func (suite *eventRecorderTestSuite) TestCommitToPublisher() {
 func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
 	ctrl := gomock.NewController(suite.T())
 	defer ctrl.Finish()
-	publisher := mocks.NewMockEventPublisher(ctrl)
+	publisher := mocks.NewMockPublisher(ctrl)
 	publisher.EXPECT().
 		Publish(gomock.AssignableToTypeOf(&AccountCreated{})).
 		Times(1)
@@ -65,7 +65,7 @@ func (suite *eventRecorderTestSuite) TestInOrmAggregate() {
 	account.CommitEvents(publisher)
 }
 
-func (suite *eventRecorderTestSuite) newEvent() devent.DomainEvent {
+func (suite *eventRecorderTestSuite) newEvent() devent.Event {
 	return occurAccountCreate(
 		vo.IDGenerator.LongID(),
 		"test account")

@@ -17,7 +17,7 @@ func TestSourcedEventRecorder(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	publisher := mocks.NewMockEventPublisher(ctrl)
+	publisher := mocks.NewMockPublisher(ctrl)
 	publisher.EXPECT().Publish(gomock.Any()).Times(1)
 	account.CommitEvents(publisher)
 }

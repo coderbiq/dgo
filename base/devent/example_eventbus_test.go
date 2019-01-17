@@ -12,14 +12,14 @@ type runner interface {
 	Run(context.Context)
 }
 
-func ExampleSimpleEventBus() {
+func ExampleSimpleBus() {
 
-	eventBus := devent.SimpleEventBus(5)
+	eventBus := devent.SimpleBus(5)
 	go eventBus.(runner).Run(context.Background())
 
-	eventBus.AddRouter(devent.SimpleEventRouter(map[string][]devent.EventConsumer{
-		"accountCreated": []devent.EventConsumer{
-			devent.EventConsumerFunc(func(event devent.DomainEvent) {
+	eventBus.AddRouter(devent.SimpleRouter(map[string][]devent.Consumer{
+		"accountCreated": []devent.Consumer{
+			devent.ConsumerFunc(func(event devent.Event) {
 				if e, ok := event.(*AccountCreated); ok {
 					fmt.Printf(
 						"account %s created, identity is %d\n",

@@ -7,13 +7,13 @@ import (
 
 // Account 定义聚合模型，在聚合模型内部使用事件记录器用于存储聚合内部产生的各种领域事件
 type Account struct {
-	events *devent.EventRecorder
+	events *devent.Recorder
 	ID     vo.LongID
 	Name   string
 }
 
 // CommitEvents 方法让聚合外部可以将聚合内发生的事件提交到事件发布器
-func (account *Account) CommitEvents(publishers ...devent.EventPublisher) {
+func (account *Account) CommitEvents(publishers ...devent.Publisher) {
 	account.events.CommitToPublisher(publishers...)
 }
 
@@ -21,7 +21,7 @@ func (account *Account) CommitEvents(publishers ...devent.EventPublisher) {
 //
 // 在修改完聚合的内部状态后将产生的领域事件记录到事件记录器
 func RegisterAccount(name string) *Account {
-	account := &Account{events: devent.NewEventRecorder(0)}
+	account := &Account{events: devent.NewRecorder(0)}
 	account.ID = vo.IDGenerator.LongID()
 	account.Name = name
 	// 将账户注册成功事件记录到事件记录器
@@ -49,8 +49,8 @@ func (event AccountCreated) AggregateID() vo.Identity {
 	return event.AccountID
 }
 
-func ExampleEventRecorder() {
-	var eventBus devent.EventPublisher
+func ExampleRecorder() {
+	var eventBus devent.Publisher
 	account := RegisterAccount("test account")
 	// 应用层中调用聚合执行完业务指令后，将聚合内部产生的领域事件发布到系统
 	account.CommitEvents(eventBus)

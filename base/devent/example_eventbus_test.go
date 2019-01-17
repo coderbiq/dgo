@@ -17,17 +17,18 @@ func ExampleSimpleEventBus() {
 	eventBus := devent.SimpleEventBus(5)
 	go eventBus.(runner).Run(context.Background())
 
-	eventBus.Listen(
-		"accountCreated",
-		devent.EventConsumerFunc(func(event devent.DomainEvent) {
-			if e, ok := event.(*AccountCreated); ok {
-				fmt.Printf(
-					"account %s created, identity is %d\n",
-					e.AccountName,
-					e.AccountID.Int64(),
-				)
-			}
-		}))
+	eventBus.AddRouter(devent.SimpleEventRouter(map[string][]devent.EventConsumer{
+		"accountCreated": []devent.EventConsumer{
+			devent.EventConsumerFunc(func(event devent.DomainEvent) {
+				if e, ok := event.(*AccountCreated); ok {
+					fmt.Printf(
+						"account %s created, identity is %d\n",
+						e.AccountName,
+						e.AccountID.Int64(),
+					)
+				}
+			})},
+	}))
 
 	eventBus.Publish(occurAccountCreate(vo.LongID(1), "test"))
 	eventBus.Publish(occurAccountCreate(vo.LongID(2), "test2"))

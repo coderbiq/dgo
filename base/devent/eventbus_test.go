@@ -16,24 +16,25 @@ func TestEventBus(t *testing.T) {
 
 	assert := false
 	handleEvents := 0
-	eventBus.Listen(
-		"accountCreated",
-		devent.EventConsumerFunc(func(event devent.DomainEvent) {
-			defer func() {
-				if handleEvents == 2 {
-					assert = true
+	eventBus.AddRouter(devent.SimpleEventRouter(map[string][]devent.EventConsumer{
+		"accountCreated": []devent.EventConsumer{
+			devent.EventConsumerFunc(func(event devent.DomainEvent) {
+				defer func() {
+					if handleEvents == 2 {
+						assert = true
+						cancel()
+					}
+				}()
+				if e, ok := event.(*AccountCreated); ok {
+					if e.AccountName != "test" && e.AccountName != "test2" {
+						cancel()
+					}
+					handleEvents++
+				} else {
 					cancel()
 				}
-			}()
-			if e, ok := event.(*AccountCreated); ok {
-				if e.AccountName != "test" && e.AccountName != "test2" {
-					cancel()
-				}
-				handleEvents++
-			} else {
-				cancel()
-			}
-		}))
+			})},
+	}))
 
 	eventBus.Publish(occurAccountCreate(vo.IDGenerator.LongID(), "test"))
 	eventBus.Publish(occurAccountCreate(vo.IDGenerator.LongID(), "test2"))

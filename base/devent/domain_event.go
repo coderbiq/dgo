@@ -38,10 +38,15 @@ type EventConsumer interface {
 	Handle(DomainEvent)
 }
 
+// EventRouter 根据事件名称返回订阅了该事件的所有消费者
+type EventRouter interface {
+	Consumers(eventName string) ([]EventConsumer, bool)
+}
+
 // EventBus 定义消息总线
 type EventBus interface {
 	EventPublisher
-	Listen(eventName string, consumer EventConsumer)
+	AddRouter(EventRouter)
 }
 
 // EventConsumerFunc 包装一个领域事件处理函数为领域事件消费者
@@ -140,7 +145,7 @@ type simpleEventBus struct {
 	concurrent    uint
 	eventChannel  chan DomainEvent
 	handleChannel chan *simpleEventBusHandle
-	listeners     map[string][]EventConsumer
+	routers       []EventRouter
 }
 
 type simpleEventBusHandle struct {
@@ -154,27 +159,18 @@ func SimpleEventBus(concurrent uint) EventBus {
 		concurrent:    concurrent,
 		eventChannel:  make(chan DomainEvent, 1000),
 		handleChannel: make(chan *simpleEventBusHandle),
-		listeners:     map[string][]EventConsumer{},
+		routers:       []EventRouter{},
 	}
+}
+
+func (bus *simpleEventBus) AddRouter(router EventRouter) {
+	bus.routers = append(bus.routers, router)
 }
 
 func (bus simpleEventBus) Publish(events ...DomainEvent) {
 	for _, event := range events {
-		_, has := bus.listeners[event.Name()]
-		if !has {
-			continue
-		}
 		bus.eventChannel <- event
 	}
-}
-
-func (bus simpleEventBus) Listen(eventName string, consumer EventConsumer) {
-	listeners, has := bus.listeners[eventName]
-	if !has {
-		listeners = []EventConsumer{}
-	}
-	listeners = append(listeners, consumer)
-	bus.listeners[eventName] = listeners
 }
 
 // TODO: context done 时如果事件流中有未处理的消息将丢失，应该把未处理消息持久化再退出
@@ -197,14 +193,32 @@ func (bus simpleEventBus) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case event := <-bus.eventChannel:
-			consumers := bus.listeners[event.Name()]
-			for _, consumer := range consumers {
-				bus.handleChannel <- &simpleEventBusHandle{
-					consumer: consumer,
-					event:    event,
+			for _, router := range bus.routers {
+				if consumers, has := router.Consumers(event.Name()); has {
+					for _, consumer := range consumers {
+						bus.handleChannel <- &simpleEventBusHandle{
+							consumer: consumer,
+							event:    event,
+						}
+					}
 				}
 			}
 			break
 		}
 	}
+}
+
+type simpleEventRouter struct {
+	consumers map[string][]EventConsumer
+}
+
+// SimpleEventRouter 创建一个简单的事件路由
+func SimpleEventRouter(routes map[string][]EventConsumer) EventRouter {
+	router := &simpleEventRouter{consumers: routes}
+	return router
+}
+
+func (router *simpleEventRouter) Consumers(eventName string) ([]EventConsumer, bool) {
+	consumers, has := router.consumers[eventName]
+	return consumers, has
 }

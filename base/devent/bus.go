@@ -1,6 +1,8 @@
 package devent
 
-import "context"
+import (
+	"context"
+)
 
 type simpleBus struct {
 	concurrent    uint
@@ -35,7 +37,7 @@ func (bus simpleBus) Publish(events ...Event) {
 }
 
 // TODO: context done 时如果事件流中有未处理的消息将丢失，应该把未处理消息持久化再退出
-func (bus simpleBus) Run(ctx context.Context) {
+func (bus *simpleBus) Run(ctx context.Context) {
 	for i := uint(0); i < bus.concurrent; i++ {
 		go func(ctx context.Context, c <-chan *simpleBusHandle) {
 			for {
